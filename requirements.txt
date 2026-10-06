@@ -1,0 +1,7 @@
+hidapi>=0.14
+# macOS menu bar + popover
+pyobjc-framework-Cocoa>=10; sys_platform == 'darwin'
+pyobjc-framework-WebKit>=10; sys_platform == 'darwin'
+# Windows / Linux system tray
+pystray>=0.19; sys_platform != 'darwin'
+Pillow>=10; sys_platform != 'darwin'
