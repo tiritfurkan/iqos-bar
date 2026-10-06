@@ -7,6 +7,7 @@ a worker thread so the menu bar never stalls.
 
 from __future__ import annotations
 
+import sys
 import threading
 from pathlib import Path
 
@@ -34,7 +35,9 @@ from .core import Poller
 
 REFRESH_SECONDS = 20
 PANEL_WIDTH = 316
-ICON_PATH = Path(__file__).resolve().parent.parent / "assets" / "menubar@2x.png"
+# In a PyInstaller bundle the assets live under sys._MEIPASS.
+_BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+ICON_PATH = _BASE / "assets" / "menubar@2x.png"
 
 WKScriptMessageHandler = objc.protocolNamed("WKScriptMessageHandler")
 

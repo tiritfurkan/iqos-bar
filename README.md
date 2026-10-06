@@ -29,7 +29,28 @@ commands; fields the model doesn't expose just show up blank, and nothing is
 written to the device either way. If you have another model, a dump from
 `tools/dump.py` in an issue helps add support — see [PROTOCOL.md](PROTOCOL.md).
 
-## Install
+## Download
+
+| Platform | File |
+|---|---|
+| macOS, Apple Silicon (M1 and later) | [IQOS-Bar-macOS-AppleSilicon.zip](https://github.com/tiritfurkan/iqos-bar/releases/latest/download/IQOS-Bar-macOS-AppleSilicon.zip) |
+| macOS, Intel | [IQOS-Bar-macOS-Intel.zip](https://github.com/tiritfurkan/iqos-bar/releases/latest/download/IQOS-Bar-macOS-Intel.zip) |
+| Windows 10/11 | [IQOS-Bar-Windows.exe](https://github.com/tiritfurkan/iqos-bar/releases/latest/download/IQOS-Bar-Windows.exe) |
+
+All versions are on the [Releases](https://github.com/tiritfurkan/iqos-bar/releases) page.
+Not sure which Mac you have? Apple menu → About This Mac → "Chip".
+
+The builds aren't signed with a paid Apple/Microsoft certificate, so the first
+launch needs one extra click:
+
+- **macOS:** unzip, drag *IQOS Bar* to Applications and open it. If macOS says
+  it can't verify the app, open *System Settings → Privacy & Security*, scroll
+  down and click **Open Anyway**. You only do this once.
+- **Windows:** if SmartScreen says "Windows protected your PC", click
+  **More info → Run anyway**. The icon lives in the tray; if you don't see it,
+  click the **^** arrow next to the clock and drag it out.
+
+## Run from source
 
 ```bash
 git clone https://github.com/tiritfurkan/iqos-bar.git
@@ -47,7 +68,20 @@ python -m iqosbar
 The IQOS icon shows up in your menu bar (macOS) or tray (Windows/Linux). Plug
 in the device and the numbers appear in a few seconds.
 
-On Linux you may need a tray backend — `gir1.2-appindicator3` on GNOME, for
+### Linux
+
+Linux only lets root talk to USB HID devices by default. Add a udev rule once
+so your user can read the IQOS, then unplug and replug it:
+
+```bash
+sudo tee /etc/udev/rules.d/70-iqos.rules <<'EOF'
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="2759", ATTRS{idProduct}=="0003", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2759", ATTRS{idProduct}=="0003", TAG+="uaccess"
+EOF
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+You may also need a tray backend — `gir1.2-appindicator3-0.1` on GNOME, for
 example.
 
 ### Read it from the terminal

@@ -1,0 +1,93 @@
+name: Build
+
+# Builds the app for Windows, Apple Silicon and Intel Macs.
+# - Every run uploads the builds as workflow artifacts.
+# - Pushing a tag like v1.0.0 also publishes them on the Releases page.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: IQOS-Bar-Windows.exe
+          - os: macos-15
+            asset: IQOS-Bar-macOS-AppleSilicon.zip
+          - os: macos-15-intel
+            asset: IQOS-Bar-macOS-Intel.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          python - <<'EOF'
+          import sys, hid
+          import iqosbar.core, iqosbar.reader, iqosbar.chart, iqosbar.history
+          if sys.platform == "darwin":
+              import iqosbar.ui_mac, iqosbar.panel
+          else:
+              import iqosbar.ui_win
+              from iqosbar.icon import tray_image
+              tray_image("92%", 64)
+          # Draw the dashboard with a sample device so the chart code runs.
+          from iqosbar import history, chart
+          history.record("CI0000000000", "42PT", 800, 11000, name="ILUMA i ONE")
+          print("chart:", chart.build())
+          print("hid devices visible:", len(hid.enumerate()))
+          print("ok on", sys.platform)
+          EOF
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller packaging/macos.spec --noconfirm
+          ditto -c -k --keepParent "dist/IQOS Bar.app" "${{ matrix.asset }}"
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          pyinstaller packaging/windows.spec --noconfirm
+          cp "dist/IQOS Bar.exe" "${{ matrix.asset }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "IQOS Bar $GITHUB_REF_NAME" \
+            --generate-notes

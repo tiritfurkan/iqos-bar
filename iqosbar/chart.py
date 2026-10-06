@@ -74,7 +74,7 @@ def _bars_svg(series, accent: str) -> str:
             parts.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{h:.1f}" rx="3" fill="{accent}"><title>{day.isoformat()}: {value}</title></rect>')
             if value:
                 parts.append(f'<text x="{x+bar_w/2:.1f}" y="{y-4:.1f}" class="vlab">{value}</text>')
-        parts.append(f'<text x="{x+bar_w/2:.1f}" y="{height-pad_b+16}" class="xlab">{day.strftime("%-d")}</text>')
+        parts.append(f'<text x="{x+bar_w/2:.1f}" y="{height-pad_b+16}" class="xlab">{day.day}</text>')
     parts.append("</svg>")
     return "".join(parts)
 
